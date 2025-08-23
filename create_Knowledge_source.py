@@ -1,7 +1,12 @@
+import os
+from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+# Load environment variables
+load_dotenv()
 
 # Path to PDF data
 DATA_PATH = "data/"
@@ -28,17 +33,18 @@ def create_chunks(docs):
 text_chunks = create_chunks(documents)
 print("Chunks created:", len(text_chunks))
 
-# Create HuggingFace embedding model
-
+# Use Google Generative AI Embeddings
 def create_embedding_model():
-    embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
-    return embedding_model
+    return GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",
+        google_api_key=os.getenv("GOOGLE_API_KEY")
+    )
 
 embedding_model = create_embedding_model()
 
 # Create and save FAISS vectorstore
 DB_FAISS_PATH = "vectorstore/db_faiss"
-db =FAISS.from_documents(text_chunks, embedding_model)
+db = FAISS.from_documents(text_chunks, embedding_model)
 db.save_local(DB_FAISS_PATH)
 
 print("Embedding and FAISS vectorstore creation completed.")
