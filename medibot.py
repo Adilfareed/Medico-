@@ -24,17 +24,16 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 class LocalSentenceEmbeddings(Embeddings):
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2"):
         try:
-            self.model = SentenceTransformer(model_name)
+            from huggingface_hub import login
+            hf_token = os.getenv("HF_TOKEN")
+            if hf_token:
+                login(token=hf_token)
+            self.model = SentenceTransformer(model_name, use_auth_token=hf_token)
             print("✅ SentenceTransformer model loaded successfully")
         except Exception as e:
             print("❌ Error loading SentenceTransformer model:", str(e))
             raise
 
-    def embed_documents(self, texts):
-        return self.model.encode(texts, convert_to_tensor=False).tolist()
-
-    def embed_query(self, text):
-        return self.model.encode([text], convert_to_tensor=False)[0].tolist()
 
 
 @st.cache_resource
