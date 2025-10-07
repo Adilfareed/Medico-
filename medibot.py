@@ -24,23 +24,25 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 class LocalSentenceEmbeddings(Embeddings):
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2"):
         try:
-            from huggingface_hub import HfApi
+            # 💡 New Approach: Explicitly ensure no token is used and skip the 
+            # automatic environment variable check for this public model.
+            
+            # The 'use_auth_token' argument is deprecated, replaced by 'token'.
+            # By passing 'token=None', we explicitly override any token that 
+            # might be automatically loaded from the environment (like the expired one).
+            
+            self.model = SentenceTransformer(
+                model_name,
+                token=None,  # This is the key to override an environment token
+                trust_remote_code=False # Recommended for public models
+            )
 
-            hf_token = os.getenv("HF_TOKEN")
-            if hf_token:
-                print("🔐 Using Hugging Face token for authentication")
-                self.model = SentenceTransformer(model_name, use_auth_token=hf_token)
-            else:
-                print("🌐 No token found — using public access")
-                self.model = SentenceTransformer(model_name)
-
-            print("✅ SentenceTransformer model loaded successfully")
+            print("✅ SentenceTransformer public model loaded successfully (forced public access)")
 
         except Exception as e:
-            print("❌ Error loading SentenceTransformer model:", str(e))
+            print(f"❌ Error loading SentenceTransformer model for {model_name}: {str(e)}")
+            # Re-raise the exception to be caught by get_vectorstore
             raise
-
-
 
 @st.cache_resource
 def get_vectorstore():
