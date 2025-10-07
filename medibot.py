@@ -24,34 +24,22 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 class LocalSentenceEmbeddings(Embeddings):
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2"):
         try:
-            from huggingface_hub import login
+            from huggingface_hub import HfApi
 
-            # ✅ Smart token fetch — works locally (.env) and on Streamlit Cloud (st.secrets)
-            hf_token = None
-            try:
-                import streamlit as st
-                if "HF_TOKEN" in st.secrets:
-                    hf_token = st.secrets["HF_TOKEN"]
-            except Exception:
-                pass
-
-            # fallback to local .env if not in st.secrets
-            if not hf_token:
-                from dotenv import load_dotenv
-                load_dotenv()
-                hf_token = os.getenv("HF_TOKEN")
-
-            # ✅ Login only if token exists
+            hf_token = os.getenv("HF_TOKEN")
             if hf_token:
-                login(token=hf_token)
+                print("🔐 Using Hugging Face token for authentication")
+                self.model = SentenceTransformer(model_name, use_auth_token=hf_token)
+            else:
+                print("🌐 No token found — using public access")
+                self.model = SentenceTransformer(model_name)
 
-            # ✅ Load model
-            self.model = SentenceTransformer(model_name, use_auth_token=hf_token)
             print("✅ SentenceTransformer model loaded successfully")
 
         except Exception as e:
             print("❌ Error loading SentenceTransformer model:", str(e))
             raise
+
 
 
 @st.cache_resource
@@ -72,7 +60,7 @@ def set_custom_prompt(custom_prompt_template):
 
 
 def main():
-    st.title(" MEDICO!")
+    st.title(" 🩺 MEDICO Assistant")
 
     if 'messages' not in st.session_state:
         st.session_state.messages = []
